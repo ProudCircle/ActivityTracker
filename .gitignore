@@ -1,2 +1,2 @@
 # Remove C# generated files
-obj/*
+app/obj/*
