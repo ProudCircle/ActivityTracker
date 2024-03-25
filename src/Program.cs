@@ -3,7 +3,6 @@ using Serilog;
 using Config.Net;
 using Serilog.Formatting.Json;
 using ActivityTracker.src.util;
-using DSharpPlus;
 
 
 class Program {

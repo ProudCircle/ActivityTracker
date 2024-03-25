@@ -4,6 +4,7 @@ using DSharpPlus.EventArgs;
 using ActivityTracker.src.util;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.EventArgs;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -11,15 +12,29 @@ namespace ActivityTracker.src;
 
 public class ActivityTrackerBot {
     private string TOKEN;
-
-    public DiscordClient DiscordBot { get; private set; }
-    public SlashCommandsExtension SlashCommands { get; private set; }
-    public IBotConfig BotConfig { get; private set; }
+    private DiscordClient DiscordBot { get; set; }
+    private SlashCommandsExtension SlashCommands { get; set; }
+    private SqliteConnection LoggingDb { get; set; }
+    private IBotConfig BotConfig { get; set; }
     private readonly Metadat metadat = new();
 
     public ActivityTrackerBot(string token, IBotConfig config) {
         TOKEN = token;
         BotConfig = config;
+        LoggingDb = new SqliteConnection("Data Source=scmd.log");
+        LoggingDb.Open();
+        
+        var command = LoggingDb.CreateCommand();
+        command.CommandText =
+        $"""
+             CREATE TABLE IF NOT EXISTS commands_log (
+             id INTEGER PRIMARY KEY AUTOINCREMENT,
+             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+             user INTEGER,
+             command TEXT
+             );
+         """;
+        command.ExecuteNonQuery();
     }
 
     public async Task RunBotAsync() {
@@ -41,6 +56,7 @@ public class ActivityTrackerBot {
         SlashCommands = DiscordBot.UseSlashCommands(slashCommandConfig);
         SlashCommands.RegisterCommands<SlashCommands>();
         SlashCommands.SlashCommandErrored += OnSlashCommandError;
+        SlashCommands.SlashCommandInvoked += OnSlashCommandInvoked;
 
         await DiscordBot.ConnectAsync();
         await Task.Delay(-1);
@@ -65,6 +81,15 @@ public class ActivityTrackerBot {
 
         DiscordBot.Logger.LogError(eventArgs.Exception.ToString());
         DiscordBot.Logger.LogError($"{eventArgs.Exception.Message} | {eventArgs.Exception.StackTrace}");
+    }
+
+    private async Task OnSlashCommandInvoked(SlashCommandsExtension sender, SlashCommandInvokedEventArgs eventArgs) {
+        string insertQuery = "INSERT INTO commands_log (USER, COMMAND) VALUES (@user, @command)";
+        using (SqliteCommand commandInsert = new SqliteCommand(insertQuery, LoggingDb)) {
+            commandInsert.Parameters.AddWithValue("@user", eventArgs.Context.User.Id);
+            commandInsert.Parameters.AddWithValue("@command", eventArgs.Context.CommandName);
+            commandInsert.ExecuteNonQuery();
+        }
     }
 
     private async Task SetDefaultStatus(DiscordClient discordClient) {
