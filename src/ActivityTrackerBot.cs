@@ -47,7 +47,7 @@ public class ActivityTrackerBot {
     }
 
     private async Task OnReadyEvent(DiscordClient discordClient, SessionReadyEventArgs eventArgs) {
-        discordClient.Logger.LogInformation($"{metadat.BotName} - {metadat.VersionName} has established session");
+        discordClient.Logger.LogInformation($"{metadat.BotName} - {metadat.VersionName} has established a session");
         await SetDefaultStatus(DiscordBot);
     }
 
