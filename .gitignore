@@ -1,3 +1,6 @@
 # Remove C# generated files
 app/obj/*
 app/bin/*
+
+# Remove IDE Generated Files
+.idea/*
