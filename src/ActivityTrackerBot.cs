@@ -42,14 +42,13 @@ public class ActivityTrackerBot {
         SlashCommands.RegisterCommands<SlashCommands>();
         SlashCommands.SlashCommandErrored += OnSlashCommandError;
 
-        await SetDefaultStatus();
-
         await DiscordBot.ConnectAsync();
         await Task.Delay(-1);
     }
 
     private async Task OnReadyEvent(DiscordClient discordClient, SessionReadyEventArgs eventArgs) {
         discordClient.Logger.LogInformation($"{metadat.BotName} - {metadat.VersionName} has established session");
+        await SetDefaultStatus(DiscordBot);
     }
 
     private async Task OnSlashCommandError(SlashCommandsExtension sender, SlashCommandErrorEventArgs eventArgs) {
@@ -68,8 +67,8 @@ public class ActivityTrackerBot {
         DiscordBot.Logger.LogError($"{eventArgs.Exception.Message} | {eventArgs.Exception.StackTrace}");
     }
 
-    private async Task SetDefaultStatus() {
+    private async Task SetDefaultStatus(DiscordClient discordClient) {
         DiscordActivity activity = new DiscordActivity("guild players!", ActivityType.Watching);
-        await DiscordBot.UpdateStatusAsync(activity);
+        await discordClient.UpdateStatusAsync(activity);
     }
 }
