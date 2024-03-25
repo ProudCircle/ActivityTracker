@@ -1,2 +1,3 @@
 # Remove C# generated files
 app/obj/*
+app/bin/*
